@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YoNai — subir prenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #050310;
+    --glass: rgba(255,255,255,0.045);
+    --glass-strong: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.09);
+    --violet: #9163FF;
+    --violet-2: #C7B3FF;
+    --blue: #3E7BFA;
+    --blue-2: #7FB1FF;
+    --text: #F3F1FA;
+    --text-dim: #9791B5;
+    --danger: #FF7A7A;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh; color:var(--text);
+    font-family:'Inter', sans-serif;
+    background:var(--bg);
+    overflow-x:hidden;
+  }
+  h1,h2,.brand{ font-family:'Bricolage Grotesque', sans-serif; margin:0; }
+  ::selection{ background:var(--violet); color:#fff; }
+  :focus-visible{ outline:2px solid var(--violet-2); outline-offset:3px; }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+
+  .mesh{ position:fixed; inset:0; z-index:-1; overflow:hidden; }
+  .blob{ position:absolute; border-radius:50%; filter:blur(90px); opacity:.5; }
+  .blob-1{ width:480px; height:480px; background:radial-gradient(circle, var(--blue), transparent 70%); top:-140px; left:-100px; animation:float1 24s ease-in-out infinite; }
+  .blob-2{ width:420px; height:420px; background:radial-gradient(circle, var(--violet), transparent 70%); bottom:-120px; right:-100px; animation:float2 20s ease-in-out infinite; }
+  @keyframes float1{ 0%,100%{ transform:translate(0,0);} 50%{ transform:translate(30px, 30px);} }
+  @keyframes float2{ 0%,100%{ transform:translate(0,0);} 50%{ transform:translate(-30px, -20px);} }
+
+  header{ position:sticky; top:0; z-index:50; display:flex; justify-content:center; padding:16px 5vw; }
+  .navbar{
+    width:100%; max-width:1180px; display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; border-radius:999px;
+    background:var(--glass); border:1px solid var(--border);
+    backdrop-filter:blur(18px);
+  }
+  .brand{ font-size:20px; font-weight:700; display:flex; align-items:center; gap:9px; letter-spacing:-0.01em; }
+  .brand-mark{ width:42px; height:42px; border-radius:50%; border:1px solid var(--blue-2); object-fit:cover; display:block; background:#050310; }
+  .navtag{ font-size:12px; color:var(--text-dim); border:1px solid var(--border); padding:6px 14px; border-radius:999px; }
+
+  main{ max-width:1080px; margin:0 auto; padding:56px 5vw 100px; }
+
+  .page-head{ max-width:600px; margin-bottom:40px; }
+  .eyebrow{ color:var(--text-dim); font-size:14px; margin-bottom:14px; }
+  .page-head h1{
+    font-size:clamp(32px, 5vw, 50px); font-weight:800; letter-spacing:-0.02em; line-height:1.04;
+    background:linear-gradient(120deg, #fff 30%, var(--violet-2) 80%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .page-head p{ color:var(--text-dim); margin-top:14px; line-height:1.6; font-size:15.5px; }
+
+  .panel{
+    display:grid; grid-template-columns:360px 1fr; gap:28px;
+    background:var(--glass); border:1px solid var(--border); border-radius:26px;
+    padding:28px; backdrop-filter:blur(18px);
+  }
+  @media (max-width:780px){ .panel{ grid-template-columns:1fr; } }
+
+  .dz-wrap{ display:flex; flex-direction:column; gap:16px; }
+  .dropzone{
+    border:1.5px dashed var(--border); border-radius:20px; background:rgba(255,255,255,0.02);
+    aspect-ratio:4/5; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; cursor:pointer; text-align:center; padding:20px;
+    transition:border-color .15s ease, background .15s ease; position:relative; overflow:hidden;
+  }
+  .dropzone.drag{ border-color:var(--violet); background:rgba(145,99,255,0.08); }
+  .dropzone img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .dropzone .dz-label{ color:var(--text-dim); font-size:13px; z-index:1; }
+  .dropzone .dz-label b{ color:var(--text); display:block; margin-bottom:4px; font-size:14.5px; font-family:'Bricolage Grotesque'; font-weight:700; }
+  .dropzone input{ display:none; }
+  .dz-icon{ z-index:1; color:var(--text-dim); }
+  .dz-remove{
+    position:absolute; top:10px; right:10px; z-index:2;
+    background:rgba(5,3,16,0.75); border:1px solid var(--border); backdrop-filter:blur(6px);
+    color:var(--text); width:30px; height:30px; border-radius:50%;
+    cursor:pointer; display:none; align-items:center; justify-content:center; font-size:16px;
+  }
+  .dropzone.has-image .dz-remove{ display:flex; }
+  .dropzone.has-image .dz-label, .dropzone.has-image .dz-icon{ display:none; }
+  .dz-hint{ color:var(--text-dim); font-size:12.5px; text-align:center; }
+
+  form.upload-form{ display:flex; flex-direction:column; gap:20px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:520px){ .field-row{ grid-template-columns:1fr; } }
+  label{ font-size:13px; font-weight:600; color:var(--text-dim); display:block; margin-bottom:8px; }
+  input[type=text], input[type=password], input[type=number], select, textarea{
+    width:100%; background:#19305f; border:1px solid rgba(127,177,255,0.5);
+    color:#fff; padding:13px 15px; border-radius:13px;
+    font-family:'Inter'; font-size:14.5px; transition:border-color .15s ease, background .15s ease;
+  }
+  input:focus, select:focus, textarea:focus{ border-color:var(--violet-2); background:#24427e; color:#fff; }
+  input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus{
+    -webkit-text-fill-color:#fff;
+    -webkit-box-shadow:0 0 0 1000px #19305f inset;
+    transition:background-color 9999s ease-in-out 0s;
+  }
+  select option{ background:#19305f; color:#fff; }
+  textarea{ resize:vertical; min-height:90px; line-height:1.5; }
+  input::placeholder, textarea::placeholder{ color:#5C5779; }
+  select{
+    appearance:none;
+    background-image:linear-gradient(45deg, transparent 50%, var(--text-dim) 50%), linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+    background-position:calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size:5px 5px, 5px 5px; background-repeat:no-repeat;
+  }
+
+  .submit-btn{
+    align-self:flex-start; margin-top:4px;
+    background:linear-gradient(135deg, var(--blue-2), var(--violet-2));
+    color:#08061a; border:none; padding:15px 30px; border-radius:999px;
+    font-family:'Inter'; font-weight:700; font-size:14.5px; cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  .submit-btn:hover{ transform:translateY(-1px); box-shadow:0 10px 28px rgba(145,99,255,0.3); }
+  .submit-btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+  .form-error{ color:var(--danger); font-size:13px; min-height:16px; }
+
+  .login-panel{ max-width:460px; margin:0 auto 42px; background:var(--glass); border:1px solid var(--border); border-radius:22px; padding:26px; backdrop-filter:blur(18px); }
+  .login-panel h2{ font-size:26px; }
+  .login-panel p{ color:var(--text-dim); font-size:14px; line-height:1.5; margin:8px 0 22px; }
+  .login-form{ display:flex; flex-direction:column; gap:14px; }
+  .login-form .submit-btn{ width:100%; margin-top:4px; }
+  .logout-btn{ border:1px solid var(--border); background:transparent; color:var(--text-dim); padding:8px 12px; border-radius:9px; cursor:pointer; font-family:'Inter'; font-size:12px; }
+  .logout-btn:hover{ color:var(--text); border-color:var(--violet-2); }
+
+  .manage-section{ margin-top:42px; }
+  .manage-head{ margin-bottom:16px; }
+  .manage-head h2{ font-size:28px; }
+  .manage-head p{ color:var(--text-dim); margin:8px 0 0; font-size:14px; }
+  .manage-list{ display:flex; flex-direction:column; gap:12px; }
+  .manage-item{
+    display:grid; grid-template-columns:86px 1fr auto; gap:16px; align-items:center;
+    padding:14px; background:var(--glass); border:1px solid var(--border); border-radius:18px;
+  }
+  .manage-item img{ width:86px; aspect-ratio:4/5; object-fit:cover; border-radius:12px; background:#0f0c22; }
+  .manage-fields{ display:grid; grid-template-columns:1.5fr .7fr 1fr 1fr; gap:10px; }
+  .manage-fields label{ margin-bottom:5px; font-size:11px; }
+  .manage-fields input, .manage-fields select{ padding:10px 11px; font-size:13px; }
+  .manage-description{ grid-column:1 / -1; }
+  .manage-actions{ display:flex; flex-direction:column; gap:8px; }
+  .action-btn{ border:1px solid var(--border); background:var(--glass-strong); color:var(--text); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; white-space:nowrap; }
+  .action-btn:hover{ border-color:var(--violet-2); }
+  .action-btn.danger{ color:var(--danger); }
+  .manage-empty{ color:var(--text-dim); padding:24px; border:1px dashed var(--border); border-radius:16px; text-align:center; }
+  @media (max-width:780px){ .manage-item{ grid-template-columns:70px 1fr; } .manage-item img{ width:70px; } .manage-fields{ grid-template-columns:1fr 1fr; } .manage-actions{ grid-column:1 / -1; flex-direction:row; } }
+  @media (max-width:480px){ .manage-fields{ grid-template-columns:1fr; } .manage-description{ grid-column:auto; } }
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:rgba(20,16,40,0.9); border:1px solid var(--violet);
+    color:var(--text); padding:14px 22px; border-radius:14px; backdrop-filter:blur(10px);
+    font-size:14px; font-weight:500; opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease; z-index:100;
+    display:flex; align-items:center; gap:10px;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast .dot{ width:8px; height:8px; border-radius:50%; background:#8FF0C6; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<div class="mesh"><div class="blob blob-1"></div><div class="blob blob-2"></div></div>
+
+<header>
+  <div class="navbar">
+    <div class="brand"><img class="brand-mark" src="/logo.jpeg" alt="Logo YoNai">YoNai</div>
+    <span class="navtag">Panel de carga</span>
+    <button class="logout-btn" id="nav-logout" type="button" onclick="logout()" hidden>Cerrar sesión</button>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div class="eyebrow">Publicar</div>
+    <h1>Subí una prenda al catálogo</h1>
+    <p>Cargá una foto clara y los datos de la prenda. Los pedidos de esta publicación van a llegar por WhatsApp al número configurado en el catálogo.</p>
+  </div>
+
+  <section class="login-panel" id="login-panel">
+    <h2>Iniciar sesión</h2>
+    <p>Ingresá con tu usuario administrador para publicar y administrar prendas.</p>
+    <form class="login-form" id="login-form" onsubmit="handleLogin(event)">
+      <div>
+        <label for="admin-user">Usuario</label>
+        <input type="text" id="admin-user" autocomplete="username" required>
+      </div>
+      <div>
+        <label for="admin-password">Contraseña</label>
+        <input type="password" id="admin-password" autocomplete="current-password" required>
+      </div>
+      <div class="form-error" id="login-error"></div>
+      <button type="submit" class="submit-btn" id="login-btn">Iniciar sesión</button>
+    </form>
+  </section>
+
+  <div class="admin-content" id="admin-content" hidden>
+  <div class="panel">
+    <div class="dz-wrap">
+      <div class="dropzone" id="dropzone" onclick="if(event.target.id!=='dz-remove')document.getElementById('foto-input').click()">
+        <button type="button" class="dz-remove" id="dz-remove" onclick="event.stopPropagation(); removeImage();">✕</button>
+        <img id="dz-preview" style="display:none;">
+        <svg class="dz-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+        <div class="dz-label"><b>Subí una foto</b>Arrastrá una imagen o hacé clic para elegirla</div>
+        <input type="file" id="foto-input" accept="image/*">
+      </div>
+      <div class="dz-hint">Formatos JPG o PNG · se optimiza automáticamente</div>
+    </div>
+
+    <form class="upload-form" id="upload-form" onsubmit="handleSubmit(event)">
+      <div class="field-row">
+        <div>
+          <label for="f-nombre">Nombre de la prenda</label>
+          <input type="text" id="f-nombre" placeholder="Ej: Campera de jean oversize" required>
+        </div>
+        <div>
+          <label for="f-precio">Precio</label>
+          <input type="number" id="f-precio" placeholder="Ej: 15000" min="0" required>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div>
+          <label for="f-categoria">Categoría</label>
+          <select id="f-categoria" required>
+            <option value="" disabled selected>Elegí una opción</option>
+            <option>Remeras</option>
+            <option>Buzos</option>
+            <option>Camperas</option>
+            <option>Pantalones</option>
+            <option>Remerones</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-talle">Talle</label>
+          <select id="f-talle" required>
+            <option value="" disabled selected>Elegí una opción</option>
+            <option>Unico XL</option>
+            <option>Descripcion</option>
+
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="f-desc">Descripción</label>
+        <textarea id="f-desc" placeholder="Contá el estado, la marca, la tela o cualquier detalle que ayude a decidir la compra."></textarea>
+      </div>
+
+      <div class="form-error" id="form-error"></div>
+      <button type="submit" class="submit-btn" id="submit-btn">Publicar prenda</button>
+    </form>
+  </div>
+
+  <section class="manage-section" aria-labelledby="manage-title">
+    <div class="manage-head">
+      <h2 id="manage-title">Administrar prendas</h2>
+      <p>Editá los datos, cambiá el estado o eliminá una publicación.</p>
+    </div>
+    <div class="manage-list" id="manage-list">
+      <div class="manage-empty">Cargando prendas...</div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toast-text">Prenda publicada</span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-client.js"></script>
+<script>
+let pendingImage = null;
+let adminAuthenticated = false;
+
+const dropzone = document.getElementById('dropzone');
+const fotoInput = document.getElementById('foto-input');
+const dzPreview = document.getElementById('dz-preview');
+const manageList = document.getElementById('manage-list');
+const loginPanel = document.getElementById('login-panel');
+const adminContent = document.getElementById('admin-content');
+const navLogout = document.getElementById('nav-logout');
+
+fotoInput.addEventListener('change', e=>{
+  if(e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+});
+['dragover'].forEach(evt=>dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e=>{
+  if(e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file){
+  if(!file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingImage = canvas.toDataURL('image/jpeg', 0.82);
+      dzPreview.src = pendingImage;
+      dzPreview.style.display = 'block';
+      dropzone.classList.add('has-image');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(){
+  pendingImage = null;
+  dzPreview.src = '';
+  dzPreview.style.display = 'none';
+  dropzone.classList.remove('has-image');
+  fotoInput.value = '';
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function showAdmin(){
+  loginPanel.hidden = true;
+  adminContent.hidden = false;
+  navLogout.hidden = false;
+  loadManageList();
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  const errorEl = document.getElementById('login-error');
+  const button = document.getElementById('login-btn');
+  errorEl.textContent = '';
+  button.disabled = true;
+
+  try{
+    const username = document.getElementById('admin-user').value.trim();
+    const password = document.getElementById('admin-password').value;
+    const { data, error } = await window.supabaseClient
+      .from('usuarios')
+      .select('id, username')
+      .eq('username', username)
+      .eq('password', password)
+      .maybeSingle();
+    if(error) throw error;
+    if(!data) throw new Error('Usuario o contraseña incorrectos.');
+    adminAuthenticated = true;
+    document.getElementById('login-form').reset();
+    showAdmin();
+  }catch(err){
+    if(err.message === 'Invalid login credentials'){
+      errorEl.textContent = 'Usuario o contraseña incorrectos.';
+    }else if(err.message === 'Email not confirmed'){
+      errorEl.textContent = 'Confirmá el usuario en Supabase antes de ingresar.';
+    }else{
+      errorEl.textContent = err.message || 'No se pudo iniciar sesión.';
+    }
+  }finally{
+    button.disabled = false;
+  }
+}
+
+function logout(){
+  adminAuthenticated = false;
+  adminContent.hidden = true;
+  loginPanel.hidden = false;
+  navLogout.hidden = true;
+}
+
+function escapeHtml(value){
+  const div = document.createElement('div');
+  div.textContent = value ?? '';
+  return div.innerHTML;
+}
+
+async function loadManageList(){
+  try{
+    const { data, error } = await window.supabaseClient
+      .from('prendas')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if(error) throw error;
+    renderManageList(data.map(item=>({ ...item, createdAt: Number(item.created_at) })));
+  }catch(err){
+    manageList.innerHTML = `<div class="manage-empty">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderManageList(items){
+  if(!items.length){
+    manageList.innerHTML = '<div class="manage-empty">Todavía no hay prendas publicadas.</div>';
+    return;
+  }
+
+  manageList.innerHTML = items.map(item=>{
+    const estado = item.estado || 'Disponible';
+    return `<article class="manage-item" data-id="${escapeHtml(item.id)}">
+      <img src="${item.imagen || ''}" alt="${escapeHtml(item.nombre)}">
+      <div class="manage-fields">
+        <div><label>Nombre</label><input data-field="nombre" type="text" value="${escapeHtml(item.nombre)}"></div>
+        <div><label>Precio</label><input data-field="precio" type="number" min="0" value="${Number(item.precio)}"></div>
+        <div><label>Categoría</label><input data-field="categoria" type="text" value="${escapeHtml(item.categoria)}"></div>
+        <div><label>Talle</label><input data-field="talle" type="text" value="${escapeHtml(item.talle)}"></div>
+        <div><label>Estado</label><select data-field="estado">
+          ${['Disponible','Reservada','Vendida','Oculta'].map(option=>`<option ${option===estado ? 'selected' : ''}>${option}</option>`).join('')}
+        </select></div>
+        <div class="manage-description"><label>Descripción</label><input data-field="descripcion" type="text" value="${escapeHtml(item.descripcion || '')}"></div>
+      </div>
+      <div class="manage-actions">
+        <button class="action-btn" type="button" onclick="saveItem(this)">Guardar</button>
+        <button class="action-btn danger" type="button" onclick="deleteItem(this)">Eliminar</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+async function saveItem(button){
+  const card = button.closest('.manage-item');
+  const payload = {};
+  card.querySelectorAll('[data-field]').forEach(field=>{
+    payload[field.dataset.field] = field.type === 'number' ? Number(field.value) : field.value.trim();
+  });
+  button.disabled = true;
+
+  try{
+    const { error } = await window.supabaseClient
+      .from('prendas')
+      .update(payload)
+      .eq('id', card.dataset.id);
+    if(error) throw error;
+    showToast('Prenda actualizada correctamente');
+  }catch(err){
+    showToast(err.message);
+  }finally{
+    button.disabled = false;
+  }
+}
+
+async function deleteItem(button){
+  const card = button.closest('.manage-item');
+  if(!confirm('¿Querés eliminar esta prenda?')) return;
+  button.disabled = true;
+
+  try{
+    const { error } = await window.supabaseClient
+      .from('prendas')
+      .delete()
+      .eq('id', card.dataset.id);
+    if(error) throw error;
+    card.remove();
+    if(!manageList.children.length) renderManageList([]);
+    showToast('Prenda eliminada');
+  }catch(err){
+    button.disabled = false;
+    showToast(err.message);
+  }
+}
+
+async function handleSubmit(e){
+  e.preventDefault();
+  const errorEl = document.getElementById('form-error');
+  errorEl.textContent = '';
+
+  if(!pendingImage){
+    errorEl.textContent = 'Subí una foto de la prenda antes de publicar.';
+    return;
+  }
+
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const precio = document.getElementById('f-precio').value;
+  const categoria = document.getElementById('f-categoria').value;
+  const talle = document.getElementById('f-talle').value;
+  const condicion = 'Nuevo';
+  const descripcion = document.getElementById('f-desc').value.trim();
+
+  if(!nombre || !precio || !categoria || !talle){
+    errorEl.textContent = 'Completá todos los campos obligatorios.';
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Publicando...';
+
+  const item = {
+    nombre, precio: Number(precio), categoria, talle, condicion, descripcion,
+    imagen: pendingImage
+  };
+
+  try{
+    const { data, error } = await window.supabaseClient
+      .from('prendas')
+      .insert({ ...item, id: crypto.randomUUID(), estado: 'Disponible', created_at: Date.now() })
+      .select()
+      .single();
+    if(error) throw error;
+
+    showToast('Prenda publicada correctamente');
+    document.getElementById('upload-form').reset();
+    removeImage();
+    await loadManageList();
+  }catch(err){
+    console.error(err);
+    errorEl.textContent = err.message || 'No se pudo guardar la publicación. Probá de nuevo.';
+    btn.disabled = false;
+    btn.textContent = 'Publicar prenda';
+  }
+}
+
+</script>
+
+</body>
+</html>
